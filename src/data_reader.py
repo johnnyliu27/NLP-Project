@@ -67,3 +67,47 @@ def getEmbeddingTensor(embedding_path):
     embedding_tensor = np.array(embedding_tensor, dtype=np.float32)
 
     return embedding_tensor, word_to_indx
+
+def getIndicesTensor(text_arr, word_to_indx, max_length):
+    nil_indx = 0
+    text_indx = [ word_to_indx[x] if x in word_to_indx else nil_indx for x in text_arr][:max_length]
+    if len(text_indx) < max_length:
+        text_indx.extend( [nil_indx for _ in range(max_length - len(text_indx))])
+
+    x =  torch.LongTensor(text_indx)
+
+    return x
+
+def map_corpus(corpus, word_to_indx):
+    mapped_corpus = {}
+    for id in corpus:
+        (title, body) = corpus[id]
+        titleIds = getIndicesTensor(title, word_to_indx, 60)
+        bodyIds = getIndicesTensor(body, word_to_indx, 100)
+        mapped_corpus[id] = (titleIds, bodyIds)
+    return mapped_corpus
+
+def create_train_set(ids_corpus, data):
+    N = len(data)
+    triples = [ ]
+    for u in range(N):
+        pid, qids, qlabels = data[u]
+        if pid not in ids_corpus: continue
+        pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
+        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ]
+        triples += [ [pid,x]+neg for x in pos ]
+
+    train_set = []
+    
+    for triple in triples:
+        pid = triple[0]
+        pos = triple[1]
+        neg = triple[2:]
+        pid_tensor_title = ids_corpus[pid][0]
+        pid_tensor_body = ids_corpus[pid][1]
+        rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in [pos] + neg])
+        rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in [pos] + neg])
+        train_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
+                         "pid_body" : pid_tensor_body, "rest_body" : rest_body})
+        
+    return train_set
