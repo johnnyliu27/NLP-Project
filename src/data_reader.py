@@ -11,9 +11,8 @@ def read_corpus(path):
     fopen = gzip.open if path.endswith(".gz") else open
     with fopen(path) as fin:
         for line in fin:
-            id, title, body = line.split("\t")
+            id, title, body = line.decode("utf-8").split("\t")
             if len(title) == 0:
-                print id
                 empty_cnt += 1
                 continue
             title = title.strip().split()
@@ -58,7 +57,7 @@ def getEmbeddingTensor(embedding_path):
     embedding_tensor = []
     word_to_indx = {}
     for indx, l in enumerate(lines):
-        word, emb = l.split()[0], l.split()[1:]
+        word, emb = l.decode("utf-8").split()[0], l.decode("utf-8").split()[1:]
         vector = [float(x) for x in emb ]
         if indx == 0:
             embedding_tensor.append( np.zeros( len(vector) ) )
