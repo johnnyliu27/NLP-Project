@@ -1,6 +1,7 @@
 import sys
 import gzip
 import random
+import torch
 import numpy as np
 
 # pieces of code taken from https://github.com/taolei87/rcnn/blob/master/code/qa/myio.py
@@ -31,7 +32,7 @@ def read_annotations(path, K_neg=20, prune_pos_cnt=10):
             if len(pos) == 0 or (len(pos) > prune_pos_cnt and prune_pos_cnt != -1): continue
             if K_neg != -1:
                 random.shuffle(neg)
-                neg = neg[:K_neg]
+                neg = neg[:K_neg + 2] # decreases chance of bad luck
             s = set()
             qids = [ ]
             qlabels = [ ]
@@ -86,14 +87,14 @@ def map_corpus(corpus, word_to_indx):
         mapped_corpus[id] = (titleIds, bodyIds)
     return mapped_corpus
 
-def create_train_set(ids_corpus, data):
+def create_train_set(ids_corpus, data, K_neg = 20):
     N = len(data)
     triples = [ ]
     for u in range(N):
         pid, qids, qlabels = data[u]
         if pid not in ids_corpus: continue
         pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
-        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ]
+        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ][:K_neg]
         triples += [ [pid,x]+neg for x in pos ]
 
     train_set = []
