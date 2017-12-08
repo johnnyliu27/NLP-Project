@@ -24,10 +24,10 @@ class Evaluation():
                 if val == 1:
                     count += 1.0
                     temp.append(count/(i+1))
-        if len(temp) > 0:
-            scores.append(sum(temp) / len(temp))
-        else:
-            missing_MAP += 1
+            if len(temp) > 0:
+                scores.append(sum(temp) / len(temp))
+            else:
+                missing_MAP += 1
         return sum(scores)/len(scores) if len(scores) > 0 else 0.0
 
 
