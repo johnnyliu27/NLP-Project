@@ -48,9 +48,16 @@ def run_epoch(data, is_training, model, optimizer):
         pid_body = torch.unsqueeze(Variable(batch['pid_body']), 1)
         rest_title = Variable(batch['rest_title'])
         rest_body = Variable(batch['rest_body'])
+
+        pid_title_pad = torch.unsqueeze(Variable(batch['pid_title_pad']), 1)
+        pid_body_pad = torch.unsqueeze(Variable(batch['pid_body_pad']), 1)
+        rest_title_pad = Variable(batch['rest_title_pad'])
+        rest_body_pad = Variable(batch['rest_body_pad'])
         
         pid_title, pid_body = pid_title.cuda(), pid_body.cuda()
         rest_title, rest_body = rest_title.cuda(), rest_body.cuda()
+        pid_title_pad, pid_body_pad = pid_title_pad.cuda(), pid_body_pad.cuda()
+        rest_title_pad, rest_body_pad = rest_title_pad.cuda(), rest_body_pad.cuda()
         
         if is_training:
             optimizer.zero_grad()
@@ -59,6 +66,33 @@ def run_epoch(data, is_training, model, optimizer):
         pb = model(pid_body)
         rt = model(rest_title)
         rb = model(rest_body)
+
+        # we need to take the mean pooling taking into account the padding
+        # tensors are of dim batch_size x samples x output_size x (len - kernel + 1)
+        # pad tensors are of dim batch_size x samples x (len - kernel + 1)
+        
+        pid_title_pad_ex = torch.unsqueeze(pid_title_pad, 2).expand_as(pt)
+        pid_body_pad_ex = torch.unsqueeze(pid_body_pad, 2).expand_as(pb)
+        rest_title_pad_ex = torch.unsqueeze(rest_title_pad, 2).expand_as(rt)
+        rest_body_pad_ex = torch.unsqueeze(rest_body_pad, 2).expand_as(rb)
+        
+        pt = torch.squeeze(torch.sum(pt * pid_title_pad_ex, dim = 3), dim = 3)
+        pb = torch.squeeze(torch.sum(pb * pid_body_pad_ex, dim = 3), dim = 3)
+        rt = torch.squeeze(torch.sum(rt * rest_title_pad_ex, dim = 3), dim = 3)
+        rb = torch.squeeze(torch.sum(rb * rest_body_pad_ex, dim = 3), dim = 3)
+
+        # tensors are not of dim batch_size x samples x output_size
+        # need to scale down because not all uniformly padded
+
+        ptp_norm = torch.sum(pid_title_pad, dim = 2).clamp(min = 1).expand_as(pt)
+        pbp_norm = torch.sum(pid_body_pad, dim = 2).clamp(min = 1).expand_as(pb)
+        rtp_norm = torch.sum(rest_title_pad, dim = 2).clamp(min = 1).expand_as(rt)
+        rbp_norm = torch.sum(rest_body_pad, dim = 2).clamp(min = 1).expand_as(rb)
+        
+        pt = pt / ptp_norm
+        pb = pb / pbp_norm
+        rt = rt / rtp_norm
+        rb = rb / rbp_norm
         
         pid_tensor = (pt + pb)/2
         rest_tensor = (rt + rb)/2

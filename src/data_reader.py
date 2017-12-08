@@ -68,23 +68,28 @@ def getEmbeddingTensor(embedding_path):
 
     return embedding_tensor, word_to_indx
 
-def getIndicesTensor(text_arr, word_to_indx, max_length):
+def getIndicesTensor(text_arr, word_to_indx, max_length, kernel_width = 3):
     nil_indx = 0
     text_indx = [ word_to_indx[x] if x in word_to_indx else nil_indx for x in text_arr][:max_length]
+    pad_indx = []
+    if len(text_arr) >= kernel_width:
+        pad_indx = ([1] * (len(text_arr) - kernel_width + 1))[:max_length - kernel_width + 1]
     if len(text_indx) < max_length:
+        pad_indx.extend([0 for _ in range(max_length - kernel_width + 1 - len(pad_indx))])
         text_indx.extend( [nil_indx for _ in range(max_length - len(text_indx))])
 
-    x =  torch.LongTensor(text_indx)
+    x = torch.LongTensor(text_indx)
+    y = torch.FloatTensor(pad_indx)
 
-    return x
+    return (x,y)
 
 def map_corpus(corpus, word_to_indx):
     mapped_corpus = {}
     for id in corpus:
         (title, body) = corpus[id]
-        titleIds = getIndicesTensor(title, word_to_indx, 60)
-        bodyIds = getIndicesTensor(body, word_to_indx, 100)
-        mapped_corpus[id] = (titleIds, bodyIds)
+        (titleTensor, titlePad) = getIndicesTensor(title, word_to_indx, 60)
+        (bodyTensor, bodyPad) = getIndicesTensor(body, word_to_indx, 100)
+        mapped_corpus[id] = (titleTensor, bodyTensor, titlePad, bodyPad)
     return mapped_corpus
 
 def create_train_set(ids_corpus, data, K_neg = 20):
@@ -107,9 +112,17 @@ def create_train_set(ids_corpus, data, K_neg = 20):
         pid_tensor_body = ids_corpus[pid][1]
         rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in [pos] + neg])
         rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in [pos] + neg])
+
+        pid_pad_title = ids_corpus[pid][2]
+        pid_pad_body = ids_corpus[pid][3]
+        rest_pad_title = torch.cat([torch.unsqueeze(ids_corpus[x][2],0) for x in [pos] + neg])
+        rest_pad_body = torch.cat([torch.unsqueeze(ids_corpus[x][3],0) for x in [pos] + neg])
+        
         train_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
-                         "pid_body" : pid_tensor_body, "rest_body" : rest_body})
-        # TODO : also add body/title lengths for normalization in cnn
+                          "pid_body" : pid_tensor_body, "rest_body" : rest_body,
+                          "pid_title_pad" : pid_pad_title, "pid_body_pad" : pid_pad_body,
+                          "rest_title_pad" : rest_pad_title, "rest_body_pad" : rest_pad_body})
+        
     return train_set
 
 
@@ -119,16 +132,22 @@ def create_dev_set(ids_corpus, data):
     for u in range(N):
         pid, qids, qlabels = data[u]
         if pid not in ids_corpus: continue 
-        pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
-        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ]
     
         pid_tensor_title = ids_corpus[pid][0]
         pid_tensor_body = ids_corpus[pid][1]
         rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in qids])
         rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in qids])
+        
+        pid_pad_title = ids_corpus[pid][2]
+        pid_pad_body = ids_corpus[pid][3]
+        rest_pad_title = torch.cat([torch.unsqueeze(ids_corpus[x][2],0) for x in qids])
+        rest_pad_body = torch.cat([torch.unsqueeze(ids_corpus[x][3],0) for x in qids])
+        
         dev_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
                         "pid_body" : pid_tensor_body, "rest_body" : rest_body,
-                       "labels" : torch.LongTensor(qlabels)})
+                        "pid_title_pad" : pid_pad_title, "pid_body_pad" : pid_pad_body,
+                        "rest_title_pad" : rest_pad_title, "rest_body_pad" : rest_pad_body,
+                        "labels" : torch.LongTensor(qlabels)})
 
     return dev_set
 

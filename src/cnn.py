@@ -22,8 +22,9 @@ class CNN(nn.Module):
         x = torch.transpose(x, 1, 2) # swaps len and 200 to make convolution work
         x = F.tanh(self.conv(x))
         # x is now of dim batch * num_samples x output_size x (len - kernel_width + 1)
-        x = torch.mean(x, dim = 2)
-        x = torch.squeeze(x, dim = 2)
-        x = x.view(batch_size, samples, self.output_size)
+        #x = torch.mean(x, dim = 2)
+        #x = torch.squeeze(x, dim = 2)
+        #x = x.view(batch_size, samples, self.output_size)
+        x = x.view(batch_size, samples, self.output_size, length - self.kernel_width + 1)
         
         return x
