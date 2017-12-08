@@ -118,17 +118,17 @@ def create_dev_set(ids_corpus, data):
     dev_set = []
     for u in range(N):
         pid, qids, qlabels = data[u]
-    if pid not in ids_corpus: continue 
-    pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
-    neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ]
+        if pid not in ids_corpus: continue 
+        pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
+        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ]
     
-    pid_tensor_title = ids_corpus[pid][0]
-    pid_tensor_body = ids_corpus[pid][1]
-    rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in qids])
-    rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in qids])
-    dev_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
-                    "pid_body" : pid_tensor_body, "rest_body" : rest_body},
-                    "labels" : torch.LongTensor(qlabels)})
+        pid_tensor_title = ids_corpus[pid][0]
+        pid_tensor_body = ids_corpus[pid][1]
+        rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in qids])
+        rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in qids])
+        dev_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
+                        "pid_body" : pid_tensor_body, "rest_body" : rest_body,
+                       "labels" : torch.LongTensor(qlabels)})
 
     return dev_set
 

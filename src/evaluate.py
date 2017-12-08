@@ -11,7 +11,7 @@ class Evaluation():
             temp = item[:precision_at]
             if any(val==1 for val in item):
                 scores.append(sum([1 if val==1 else 0 for val in temp])*1.0 / len(temp) if len(temp) > 0 else 0.0)
-            return sum(scores)/len(scores) if len(scores) > 0 else 0.0
+        return sum(scores)/len(scores) if len(scores) > 0 else 0.0
 
 
     def MAP(self):
