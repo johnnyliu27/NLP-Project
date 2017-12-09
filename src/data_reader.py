@@ -81,7 +81,7 @@ def getIndicesTensor(text_arr, word_to_indx, max_length, kernel_width = 3):
         pad_indx = ([1] * (len(text_arr) - kernel_width + 1))[:max_length - kernel_width + 1]
     if len(text_indx) < max_length:
         pad_indx.extend([0 for _ in range(max_length - kernel_width + 1 - len(pad_indx))])
-        text_indx.extend( [nil_indx for _ in range(max_length - len(text_indx))])
+        text_indx.extend( [0 for _ in range(max_length - len(text_indx))])
 
     x = torch.LongTensor(text_indx)
     y = torch.FloatTensor(pad_indx)
