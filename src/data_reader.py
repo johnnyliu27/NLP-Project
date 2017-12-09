@@ -88,12 +88,12 @@ def getIndicesTensor(text_arr, word_to_indx, max_length, kernel_width = 3):
 
     return (x,y)
 
-def map_corpus(corpus, word_to_indx):
+def map_corpus(corpus, word_to_indx, kernel_width = 3):
     mapped_corpus = {}
     for id in corpus:
         (title, body) = corpus[id]
-        (titleTensor, titlePad) = getIndicesTensor(title, word_to_indx, 60)
-        (bodyTensor, bodyPad) = getIndicesTensor(body, word_to_indx, 100)
+        (titleTensor, titlePad) = getIndicesTensor(title, word_to_indx, 60, kernel_width = kernel_width)
+        (bodyTensor, bodyPad) = getIndicesTensor(body, word_to_indx, 100, kernel_width = kernel_width)
         mapped_corpus[id] = (titleTensor, bodyTensor, titlePad, bodyPad)
     return mapped_corpus
 
