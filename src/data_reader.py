@@ -60,16 +60,21 @@ def getEmbeddingTensor(embedding_path):
     for indx, l in enumerate(lines):
         word, emb = l.decode("utf-8").split()[0], l.decode("utf-8").split()[1:]
         vector = [float(x) for x in emb ]
+        vector.append(0) # coord 201 is unk word
         if indx == 0:
-            embedding_tensor.append( np.zeros( len(vector) ) )
+            embedding_tensor.append( np.zeros( len(vector) ) ) # padding
+            unk = np.zeros(len(vector))
+            unk[-1] = 1
+            embedding_tensor.append( unk ) # for unk words
+            
         embedding_tensor.append(vector)
-        word_to_indx[word] = indx+1
+        word_to_indx[word] = indx+2
     embedding_tensor = np.array(embedding_tensor, dtype=np.float32)
 
     return embedding_tensor, word_to_indx
 
 def getIndicesTensor(text_arr, word_to_indx, max_length, kernel_width = 3):
-    nil_indx = 0
+    nil_indx = 1
     text_indx = [ word_to_indx[x] if x in word_to_indx else nil_indx for x in text_arr][:max_length]
     pad_indx = []
     if len(text_arr) >= kernel_width:
