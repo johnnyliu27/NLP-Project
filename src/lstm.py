@@ -11,16 +11,17 @@ class LSTM(nn.Module):
         self.embedding_layer = nn.Embedding( vocab_size, embed_dim)
         self.embedding_layer.weight.data = torch.from_numpy( embeddings )
 
-        self.lstm = nn.LSTM(embed_dim, output_size//2, num_layers = 1,
+        self.lstm = nn.LSTM(embed_dim, output_size // 2, num_layers = 1,
                             bias = True, batch_first = True, dropout = dropout,
                             bidirectional = True)
-        # maybe try bidirectional? not obvious how to handle padding though
-        
+        self.dropout = nn.Dropout(p = dropout)
+                
     def forward(self, input):
         # input is of dim: batch x num_samples (1 or 21) x len (60 or 100)
         (batch_size, samples, length) = input.size()
         x = input.view(batch_size * samples, length) # reformat for embedding
         x = self.embedding_layer(x)
+        x = self.dropout(x)
         # x is now of dim batch * num_samples x len x 200
         output, hn = self.lstm(x) # hidden and cells are zero
         # output is of dim batch * num_samples x len x output_size
