@@ -25,6 +25,7 @@ class LSTM(nn.Module):
         # x is now of dim batch * num_samples x len x 200
         output, hn = self.lstm(x) # hidden and cells are zero
         # output is of dim batch * num_samples x len x output_size
-        x = output.contiguous().view(batch_size, samples, self.output_size, length)
+        x = torch.transpose(output, 1, 2)
+        x = x.contiguous().view(batch_size, samples, self.output_size, length)
         #x = hn[0].contiguous().view(batch_size, samples, self.output_size)
         return x
