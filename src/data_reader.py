@@ -3,6 +3,8 @@ import gzip
 import random
 import torch
 import numpy as np
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # pieces of code taken from https://github.com/taolei87/rcnn/blob/master/code/qa/myio.py
 
@@ -164,3 +166,59 @@ def convert(sim, labels):
         ranked_labels = labels[i][ranks]
         output.append(ranked_labels)
     return output
+
+def build_tfidf_features(corpus_path):
+    features = {}
+    qid2rowid = {}
+    corpus = []
+    
+    f = open(corpus_path)
+    lines = f.readlines()
+    for i in range(len(lines)):
+        line = lines[i]
+        s = re.split(r'\t', line)
+        qID = s[0]
+        text = s[1] + ' ' + s[2]
+        qid2rowid[qID] = i
+        corpus.append(text)
+    f.close()
+    
+    vectorizer = TfidfVectorizer()
+    tfidf = vectorizer.fit_transform(corpus)
+    arrays = tfidf.toarray()
+    for key in qid2rowid:
+        features[key] = torch.FloatTensor(arrays[qid2rowid[key]])
+    return features
+
+def build_android_qsets(path_pos, path_neg):
+    qIDs = []
+    qCandidates = {}
+    labels = {}
+
+    f = open(path_pos)
+    lines = f.readlines()
+    for line in lines:
+        qs = line.split()
+        qID = qs[0]
+        if qID not in qIDs:
+            qIDs.append(qID)
+            qCandidates[qID] = [qs[1]]
+            labels[qID] = [1]
+        else:
+            if qs[1] not in qCandidates[qID]:
+                qCandidates[qID].append(qs[1])
+                labels[qID].append(1)
+
+    f = open(path_neg)
+    lines = f.readlines()
+    for line in lines:
+        qs = line.split()
+        qID = qs[0]
+        if qID not in qIDs:
+            print('Error! No positive questions.')
+            break
+        else:
+            if qs[1] not in qCandidates[qID]:
+                qCandidates[qID].append(qs[1])
+                labels[qID].append(0)
+    return qIDs, qCandidates, labels
