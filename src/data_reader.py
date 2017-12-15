@@ -15,6 +15,7 @@ def read_corpus(path):
     with fopen(path) as fin:
         for line in fin:
             id, title, body = line.decode("utf-8").split("\t")
+            title, body = title.lower(), body.lower()
             if len(title) == 0:
                 empty_cnt += 1
                 continue
