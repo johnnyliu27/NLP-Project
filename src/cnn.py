@@ -11,7 +11,8 @@ class CNN(nn.Module):
         vocab_size, embed_dim = embeddings.shape
         self.embedding_layer = nn.Embedding( vocab_size, embed_dim)
         self.embedding_layer.weight.data = torch.from_numpy( embeddings )
-
+        self.embedding_layer.weight.requires_grad = False
+        
         self.conv = nn.Conv1d(embed_dim, output_size, kernel_width, stride=1)
         self.dropout = nn.Dropout(p = dropout)
         

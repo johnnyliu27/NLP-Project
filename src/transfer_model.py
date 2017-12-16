@@ -16,7 +16,8 @@ class Encoder(nn.Module):
         vocab_size, embed_dim = embeddings.shape
         self.embedding_layer = nn.Embedding( vocab_size, embed_dim)
         self.embedding_layer.weight.data = torch.from_numpy( embeddings )
-
+        self.embedding_layer.weight.requires_grad = False
+        
         self.lstm = nn.LSTM(embed_dim, output_size // 2, num_layers = 1,
                             bias = True, batch_first = True, dropout = dropout,
                             bidirectional = True)
