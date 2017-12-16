@@ -24,7 +24,7 @@ def read_corpus(path):
             raw_corpus[id] = (title, body)
     return raw_corpus
 
-def read_annotations(path, K_neg=20, prune_pos_cnt=10):
+def read_annotations(path, K_neg=20, prune_pos_cnt=10, ignore_dup = False):
     lst = [ ]
     with open(path) as fin:
         for line in fin:
@@ -40,12 +40,12 @@ def read_annotations(path, K_neg=20, prune_pos_cnt=10):
             qids = [ ]
             qlabels = [ ]
             for q in neg:
-                if q not in s:
+                if q not in s or ignore_dup:
                     qids.append(q)
                     qlabels.append(0 if q not in pos else 1)
                     s.add(q)
             for q in pos:
-                if q not in s:
+                if q not in s or ignore_dup:
                     qids.append(q)
                     qlabels.append(1)
                     s.add(q)
@@ -219,7 +219,6 @@ def build_android_qsets(path_pos, path_neg):
             print('Error! No positive questions.')
             break
         else:
-            if qs[1] not in qCandidates[qID]:
-                qCandidates[qID].append(qs[1])
-                labels[qID].append(0)
+            qCandidates[qID].append(qs[1])
+            labels[qID].append(0)
     return qIDs, qCandidates, labels
