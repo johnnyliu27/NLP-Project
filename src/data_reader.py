@@ -159,6 +159,41 @@ def create_dev_set(ids_corpus, data):
 
     return dev_set
 
+def create_android_train_set(ids_corpus, android_ids_corpus, data, K_neg = 20):
+    N = len(data)
+    triples = [ ]
+
+    android_ids = list(android_ids_corpus)
+    for u in range(N):
+        pid, qids, qlabels = data[u]
+        if pid not in ids_corpus: continue
+        pos = [ q for q, l in zip(qids, qlabels) if l == 1 and q in ids_corpus ]
+        neg = [ q for q, l in zip(qids, qlabels) if l == 0 and q in ids_corpus ][:K_neg]
+        triples += [ [pid,x]+neg for x in pos ]
+        
+    train_set = []
+    
+    for triple in triples:
+        pid = triple[0]
+        pos = triple[1]
+        neg = triple[2:]
+        pid_tensor_title = ids_corpus[pid][0]
+        pid_tensor_body = ids_corpus[pid][1]
+        rest_title = torch.cat([torch.unsqueeze(ids_corpus[x][0],0) for x in [pos] + neg])
+        rest_body = torch.cat([torch.unsqueeze(ids_corpus[x][1],0) for x in [pos] + neg])
+    
+        # now we need a random android question for our domain classifier
+
+        aid = android_ids[random.randint(0, len(android_ids) - 1)]
+        android_title = android_ids_corpus[aid][0]
+        android_body = android_ids_corpus[aid][1]
+        
+        train_set.append({"pid_title" : pid_tensor_title, "rest_title" : rest_title,
+                          "pid_body" : pid_tensor_body, "rest_body" : rest_body,
+                          "android_title" : android_title, "android_body" : android_body})
+            
+    return train_set
+
 def convert(sim, labels):
     (a, b) = sim.shape
     output = []
