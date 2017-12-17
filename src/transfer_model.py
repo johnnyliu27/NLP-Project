@@ -53,12 +53,14 @@ class Encoder(nn.Module):
 
 
 class DomainClassifier(nn.Module):
-    def __init__(self, embed_dim, hidden_size):
+    def __init__(self, embed_dim, h1, h2):
         super(DomainClassifier, self).__init__()
-        self.W_hidden = nn.Linear(embed_dim, hidden_size)
-        self.W_out = nn.Linear(hidden_size, 2)
+        self.W1 = nn.Linear(embed_dim, h1)
+        self.W2 = nn.Linear(h1, h2)
+        self.W_out = nn.Linear(h2, 2)
         
     def forward(self, input):
-        hidden = F.relu( self.W_hidden(input))
-        out = self.W_out(hidden)
+        hidden = F.relu(self.W1(input))
+        hidden2 = F.relu(self.W2(hidden))
+        out = self.W_out(hidden2)
         return out
